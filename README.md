@@ -1,3 +1,5 @@
 # Jupyterhub for Neurohackweek
 
-Docker configuration 
+Docker configuration
+
+https://hub.docker.com/r/arokem/jupyterhub-docker/
