@@ -139,7 +139,10 @@ RUN conda create -y -q --name neuro python=3.6 \
     	&& pip install -q --no-cache-dir \
     	https://github.com/nipy/nipype/tarball/master nilearn https://github.com/INCF/pybids/archive/master.zip datalad dipy nipy duecredit pymvpa2" \
     && sync
+
 ENV PATH=/opt/conda/envs/neuro/bin:$PATH
+
+RUN source activate neuro && python -m ipykernel install --name neuro --display-name "Python (neuro)"
 
 #-------------------------
 # Create conda environment
@@ -147,6 +150,7 @@ ENV PATH=/opt/conda/envs/neuro/bin:$PATH
 RUN conda create -y -q --name afni27 python=2.7 \
     && sync && conda clean -tipsy && sync
 
+RUN source activate afni27 && python -m ipykernel install --name afni27 --display-name "Python (AFNI)"
 
 #-------------------------
 # Set up RStudio
