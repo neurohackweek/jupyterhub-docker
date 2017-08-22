@@ -139,8 +139,7 @@ ENV R_REPO_HTTPS=${R_REPO//http:/https:}
 RUN echo "options(repos = list(CRAN = '${R_REPO_HTTPS}'))" >> /etc/R/Rprofile.site
 
 # Install R packages:
-RUN Rscript -e "install.packages(c('devtools', 'rmarkdown'), repos='${R_REPO}')"
-
+RUN Rscript -e "install.packages(c('devtools', 'rmarkdown', "Rmpi"), repos='${R_REPO}')"
 
 # Create new user: neuro
 RUN useradd --no-user-group --create-home --shell /bin/bash neuro
