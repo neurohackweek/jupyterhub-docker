@@ -18,7 +18,7 @@ ENV LANG="C.UTF-8" \
     LC_ALL="C" \
     ND_ENTRYPOINT="/neurodocker/startup.sh"
 RUN apt-get update -qq && apt-get install -yq --no-install-recommends  \
-    	bzip2 ca-certificates curl unzip \
+    	bzip2 ca-certificates curl unzip libapparmor1 libedit2 lsb-release \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && chmod 777 /opt && chmod a+s /opt \
@@ -142,7 +142,8 @@ RUN conda create -y -q --name neuro python=3.6 \
 
 ENV PATH=/opt/conda/envs/neuro/bin:$PATH
 
-RUN source activate neuro && python -m ipykernel install --name neuro --display-name "Python (neuro)"
+RUN /bin/bash -c "source activate neuro"
+RUN python -m ipykernel install --user --name neuro --display-name "Python (neuro)"
 
 #-------------------------
 # Create conda environment
@@ -150,17 +151,14 @@ RUN source activate neuro && python -m ipykernel install --name neuro --display-
 RUN conda create -y -q --name afni27 python=2.7 \
     && sync && conda clean -tipsy && sync
 
-RUN source activate afni27 && python -m ipykernel install --name afni27 --display-name "Python (AFNI)"
+RUN /bin/bash -c "source activate afni27"
+RUN python -m ipykernel install --user --name afni27 --display-name "Python (AFNI)"
+
+RUN /bin/bash -c "source deactivate"
 
 #-------------------------
 # Set up RStudio
 #-------------------------
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends \
-		libapparmor1 \
-		libedit2 \
-		lsb-release \
-		;
 
 # You can use rsession from rstudio's desktop package as well.
 ARG RSTUDIO_VERSION
@@ -170,12 +168,6 @@ RUN RSTUDIO_LATEST=$(wget --no-check-certificate -qO- https://s3.amazonaws.com/r
     && wget -q http://download2.rstudio.org/rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
     && dpkg -i rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
     && rm rstudio-server-*-amd64.deb
-
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN pip install git+https://github.com/jupyterhub/nbserverproxy.git
-RUN jupyter serverextension enable --sys-prefix --py nbserverproxy
 
 RUN pip install git+https://github.com/jupyterhub/nbrsessionproxy.git
 RUN jupyter serverextension enable --sys-prefix --py nbrsessionproxy
