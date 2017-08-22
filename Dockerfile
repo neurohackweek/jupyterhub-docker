@@ -182,4 +182,18 @@ RUN jupyter nbextension enable     --sys-prefix --py nbrsessionproxy
 ENV PATH="${PATH}:/usr/lib/rstudio-server/bin"
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/usr/lib/R/lib:/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:/opt/conda/lib/R/lib"
 
+## Define our default R repository
+R_REPO="https://mran.revolutionanalytics.com/snapshot/2017-01-16"
+MRAN_KEY="06F90DE5381BA480"
+GPG_KEY_SERVER="keyserver.ubuntu.com"
+U_CODE="jessie-cran3"
+
+# Use HTTPS for RProfile to prevent an error message in RStudio.
+
+R_REPO_HTTPS=${R_REPO//http:/https:}
+echo "options(repos = list(CRAN = '${R_REPO_HTTPS}'))" >> /etc/R/Rprofile.site
+
+# Install R packages:
+Rscript -e "install.packages(c('devtools', 'rmarkdown'), repos='${R_REPO}')"
+
 WORKDIR /home/neuro
