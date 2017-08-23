@@ -109,23 +109,25 @@ ENV MATLABCMD=/opt/mcr/v92/toolbox/matlab \
 # User-defined instruction
 RUN sed -i '$iexport SPMMCRCMD="/opt/spm12/run_spm12.sh /opt/mcr/v92/ script"' $ND_ENTRYPOINT
 
-#-------------------------
-# Set up RStudio
-#-------------------------
-RUN apt-get install -yq
-RUN /bin/bash -c "RSTUDIO_LATEST=$(wget --no-check-certificate -qO- https://s3.amazonaws.com/rstudio-server/current.ver)"
-RUN wget http://download2.rstudio.org/rstudio-server-${RSTUDIO_LATEST}-amd64.deb >> rstudio-server-${RSTUDIO_LATEST}-amd64.deb
-RUN dpkg -i rstudio-server-${RSTUDIO_VERSION}-amd64.deb
-RUN rm rstudio-server-*-amd64.deb
+USER root
 
-RUN pip install git+https://github.com/jupyterhub/nbrsessionproxy.git
-RUN jupyter serverextension enable --sys-prefix --py nbrsessionproxy
-RUN jupyter nbextension install    --sys-prefix --py nbrsessionproxy
-RUN jupyter nbextension enable     --sys-prefix --py nbrsessionproxy
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends \
+		libapparmor1 \
+		libedit2 \
+		lsb-release \
+    psmisc \
+    sudo \
+		;
 
-# The desktop package uses /usr/lib/rstudio/bin
-ENV PATH="${PATH}:/usr/lib/rstudio-server/bin"
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/usr/lib/R/lib:/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:/opt/conda/lib/R/lib"
+# You can use rsession from rstudio's desktop package as well.
+ARG RSTUDIO_VERSION
+RUN RSTUDIO_LATEST=$(wget --no-check-certificate -qO- https://s3.amazonaws.com/rstudio-server/current.ver) \
+    && [ -z "$RSTUDIO_VERSION" ] && RSTUDIO_VERSION=$RSTUDIO_LATEST || true \
+    && echo $RSTUDIO_VERSION \
+    && wget -q http://download2.rstudio.org/rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
+    && dpkg -i rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
+    && rm rstudio-server-*-amd64.deb
 
 ## Define our default R repository
 ENV R_REPO="https://mran.revolutionanalytics.com/snapshot/2017-01-16"
@@ -134,12 +136,14 @@ ENV GPG_KEY_SERVER="keyserver.ubuntu.com"
 ENV U_CODE="jessie-cran3"
 
 # Use HTTPS for RProfile to prevent an error message in RStudio.
-
-ENV R_REPO_HTTPS=${R_REPO//http:/https:}
-RUN echo "options(repos = list(CRAN = '${R_REPO_HTTPS}'))" >> /etc/R/Rprofile.site
+#ENV R_REPO_HTTPS=${R_REPO//http:/https:}
+#RUN echo "options(repos = list(CRAN = '${R_REPO_HTTPS}'))" >> /etc/R/Rprofile.site
 
 # Install R packages:
-RUN Rscript -e "install.packages(c('devtools', 'rmarkdown', "Rmpi"), repos='${R_REPO}')"
+RUN Rscript -e "install.packages(c('devtools', 'rmarkdown', 'ggplot2', 'dplyr', 'tidyr', 'fmri'), repos='${R_REPO}')"
+
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create new user: neuro
 RUN useradd --no-user-group --create-home --shell /bin/bash neuro
@@ -187,6 +191,28 @@ RUN /bin/bash -c "source activate afni27"
 RUN python -m ipykernel install --user --name afni27 --display-name "Python (AFNI)"
 
 RUN /bin/bash -c "source deactivate"
+
+#-----------------------
+# Finish up RStudio stuff:
+#-----------------------
+
+
+RUN pip install git+https://github.com/jupyterhub/nbserverproxy.git
+RUN jupyter serverextension enable --sys-prefix --py nbserverproxy
+
+RUN pip install git+https://github.com/jupyterhub/nbrsessionproxy.git
+RUN jupyter serverextension enable --sys-prefix --py nbrsessionproxy
+RUN jupyter nbextension install    --sys-prefix --py nbrsessionproxy
+RUN jupyter nbextension enable     --sys-prefix --py nbrsessionproxy
+
+# The desktop package uses /usr/lib/rstudio/bin
+ENV PATH="${PATH}:/usr/lib/rstudio-server/bin"
+ENV LD_LIBRARY_PATH="/usr/lib/R/lib:/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:/opt/conda/lib/R/lib"
+
+
+# Enable the widgets nbextension:
+
+RUN jupyter nbextension enable --py widgetsnbextension --sys-prefix
 
 
 WORKDIR /home/neuro
