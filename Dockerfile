@@ -7,9 +7,8 @@
 #
 # Timestamp: 2017-08-23 05:17:43
 
-FROM jupyter/datascience-notebook
+FROM neurodebian:stretch-non-free
 
-USER root
 ARG DEBIAN_FRONTEND=noninteractive
 
 #----------------------------------------------------------
@@ -171,11 +170,17 @@ RUN bash -c "source activate neuro && pip install  --upgrade https://github.com/
 # User-defined instruction
 RUN bash -c "source activate neuro && jupyter nbextension enable rubberband/main && jupyter nbextension enable exercise2/main && jupyter nbextension enable spellchecker/main "
 
+RUN /bin/bash -c "source activate neuro"
+RUN python -m ipykernel install --user --name neuro --display-name "Python (neuro)"
+
 #-------------------------
 # Create conda environment
 #-------------------------
 RUN conda create -y -q --name afni27 python=2.7 \
     && sync && conda clean -tipsy && sync
+
+RUN /bin/bash -c "source activate afni27"
+RUN python -m ipykernel install --user --name neuro --display-name "Python (AFNI)"
 
 # User-defined instruction
 COPY cifti-data /cifti-data
@@ -195,6 +200,7 @@ RUN apt-get update && \
 		libapparmor1 \
 		libedit2 \
 		lsb-release \
+    wget \
 		;
 
 # You can use rsession from rstudio's desktop package as well.
