@@ -5,10 +5,11 @@
 # pull request on our GitHub repository:
 #     https://github.com/kaczmarj/neurodocker
 #
-# Timestamp: 2017-08-11 19:07:40
+# Timestamp: 2017-08-23 05:17:43
 
-FROM neurodebian:stretch-non-free
+FROM jupyter/datascience-notebook
 
+USER root
 ARG DEBIAN_FRONTEND=noninteractive
 
 #----------------------------------------------------------
@@ -18,7 +19,7 @@ ENV LANG="C.UTF-8" \
     LC_ALL="C" \
     ND_ENTRYPOINT="/neurodocker/startup.sh"
 RUN apt-get update -qq && apt-get install -yq --no-install-recommends  \
-    	bzip2 ca-certificates curl unzip libapparmor1 libedit2 lsb-release wget\
+    	bzip2 ca-certificates curl unzip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     && chmod 777 /opt && chmod a+s /opt \
@@ -28,6 +29,13 @@ RUN apt-get update -qq && apt-get install -yq --no-install-recommends  \
     && echo 'if [ -z "$*" ]; then /usr/bin/env bash; else $*; fi' >> $ND_ENTRYPOINT \
     && chmod -R 777 /neurodocker && chmod a+s /neurodocker
 ENTRYPOINT ["/neurodocker/startup.sh"]
+
+# User-defined instruction
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
+
+RUN apt-get update -qq && apt-get install -yq --no-install-recommends dcm2niix convert3d ants graphviz tree git-annex-standalone vim emacs-nox nano less ncdu tig git-annex-remote-rclone xvfb mesa-utils build-essential nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 #--------------------
 # Install AFNI latest
@@ -64,6 +72,23 @@ RUN apt-get update -qq && apt-get install -yq --no-install-recommends ed gsl-bin
     && /opt/afni/rPkgsInstall -pkgs ALL \
     && rm -rf /tmp/*
 
+#-----------------------------------------------------------
+# Install FSL v5.0.10
+# FSL is non-free. If you are considering commerical use
+# of this Docker image, please consult the relevant license:
+# https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/Licence
+#-----------------------------------------------------------
+RUN echo "Downloading FSL ..." \
+    && curl -sSL https://fsl.fmrib.ox.ac.uk/fsldownloads/fsl-5.0.10-centos6_64.tar.gz \
+    | tar zx -C /opt \
+    && /bin/bash /opt/fsl/etc/fslconf/fslpython_install.sh -q -f /opt/fsl \
+    && sed -i '$iecho Some packages in this Docker container are non-free' $ND_ENTRYPOINT \
+    && sed -i '$iecho If you are considering commercial use of this container, please consult the relevant license:' $ND_ENTRYPOINT \
+    && sed -i '$iecho https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/Licence' $ND_ENTRYPOINT \
+    && sed -i '$isource $FSLDIR/etc/fslconf/fsl.sh' $ND_ENTRYPOINT
+ENV FSLDIR=/opt/fsl \
+    PATH=/opt/fsl/bin:$PATH
+
 #--------------------------
 # Install FreeSurfer v6.0.0
 #--------------------------
@@ -76,10 +101,6 @@ RUN apt-get update -qq && apt-get install -yq --no-install-recommends bc libgomp
     && curl -sSL https://dl.dropbox.com/s/nnzcfttc41qvt31/recon-all-freesurfer6-3.min.tgz | tar xz -C /opt \
     && sed -i '$isource $FREESURFER_HOME/SetUpFreeSurfer.sh' $ND_ENTRYPOINT
 ENV FREESURFER_HOME=/opt/freesurfer
-
-RUN apt-get update -qq && apt-get install -yq --no-install-recommends dcm2niix convert3d ants fsl graphviz tree git-annex-standalone vim emacs-nox nano less ncdu tig git-annex-remote-rclone \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 #----------------------
 # Install MCR and SPM12
@@ -109,42 +130,6 @@ ENV MATLABCMD=/opt/mcr/v92/toolbox/matlab \
 # User-defined instruction
 RUN sed -i '$iexport SPMMCRCMD="/opt/spm12/run_spm12.sh /opt/mcr/v92/ script"' $ND_ENTRYPOINT
 
-USER root
-
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends \
-		libapparmor1 \
-		libedit2 \
-		lsb-release \
-    psmisc \
-    sudo \
-		;
-
-# You can use rsession from rstudio's desktop package as well.
-ARG RSTUDIO_VERSION
-RUN RSTUDIO_LATEST=$(wget --no-check-certificate -qO- https://s3.amazonaws.com/rstudio-server/current.ver) \
-    && [ -z "$RSTUDIO_VERSION" ] && RSTUDIO_VERSION=$RSTUDIO_LATEST || true \
-    && echo $RSTUDIO_VERSION \
-    && wget -q http://download2.rstudio.org/rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
-    && dpkg -i rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
-    && rm rstudio-server-*-amd64.deb
-
-## Define our default R repository
-ENV R_REPO="https://mran.revolutionanalytics.com/snapshot/2017-01-16"
-ENV MRAN_KEY="06F90DE5381BA480"
-ENV GPG_KEY_SERVER="keyserver.ubuntu.com"
-ENV U_CODE="jessie-cran3"
-
-# Use HTTPS for RProfile to prevent an error message in RStudio.
-#ENV R_REPO_HTTPS=${R_REPO//http:/https:}
-#RUN echo "options(repos = list(CRAN = '${R_REPO_HTTPS}'))" >> /etc/R/Rprofile.site
-
-# Install R packages:
-RUN Rscript -e "install.packages(c('devtools', 'rmarkdown', 'ggplot2', 'dplyr', 'tidyr', 'fmri'), repos='${R_REPO}')"
-
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
 # Create new user: neuro
 RUN useradd --no-user-group --create-home --shell /bin/bash neuro
 USER neuro
@@ -169,17 +154,22 @@ RUN echo "Downloading Miniconda installer ..." \
 # Create conda environment
 #-------------------------
 RUN conda create -y -q --name neuro python=3.6 \
-    	jupyter jupyterlab traits pandas matplotlib scikit-learn seaborn swig \
+    	jupyter jupyterlab traits pandas matplotlib scikit-learn seaborn swig reprozip reprounzip altair traitsui apptools configobj vtk jupyter_contrib_nbextensions bokeh scikit-image \
     && sync && conda clean -tipsy && sync \
     && /bin/bash -c "source activate neuro \
     	&& pip install -q --no-cache-dir \
-    	https://github.com/nipy/nipype/tarball/master nilearn https://github.com/INCF/pybids/archive/master.zip datalad dipy nipy duecredit pymvpa2" \
+    	https://github.com/nipy/nibabel/archive/master.zip https://github.com/nipy/nipype/tarball/master nilearn https://github.com/INCF/pybids/archive/master.zip datalad dipy nipy duecredit pymvpa2 mayavi git+https://github.com/jupyterhub/nbrsessionproxy.git" \
     && sync
-
 ENV PATH=/opt/conda/envs/neuro/bin:$PATH
 
-RUN /bin/bash -c "source activate neuro"
-RUN python -m ipykernel install --user --name neuro --display-name "Python (neuro)"
+# User-defined instruction
+RUN bash -c "source activate neuro && pip install --pre --upgrade ipywidgets pythreejs "
+
+# User-defined instruction
+RUN bash -c "source activate neuro && pip install  --upgrade https://github.com/maartenbreddels/ipyvolume/archive/23eb91685dfcf200ee82f89ab6f7294f9214db8c.zip && jupyter nbextension install --py --sys-prefix ipyvolume && jupyter nbextension enable --py --sys-prefix ipyvolume "
+
+# User-defined instruction
+RUN bash -c "source activate neuro && jupyter nbextension enable rubberband/main && jupyter nbextension enable exercise2/main && jupyter nbextension enable spellchecker/main "
 
 #-------------------------
 # Create conda environment
@@ -187,15 +177,39 @@ RUN python -m ipykernel install --user --name neuro --display-name "Python (neur
 RUN conda create -y -q --name afni27 python=2.7 \
     && sync && conda clean -tipsy && sync
 
-RUN /bin/bash -c "source activate afni27"
-RUN python -m ipykernel install --user --name afni27 --display-name "Python (AFNI)"
+# User-defined instruction
+COPY cifti-data /cifti-data
 
-RUN /bin/bash -c "source deactivate"
+# User-defined instruction
+USER root
 
-#-----------------------
-# Finish up RStudio stuff:
-#-----------------------
+# User-defined instruction
+RUN chmod -R a+r /cifti-data
 
+#-------------------------
+# RStudio
+#-------------------------
+
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends \
+		libapparmor1 \
+		libedit2 \
+		lsb-release \
+		;
+
+# You can use rsession from rstudio's desktop package as well.
+ARG RSTUDIO_VERSION
+RUN RSTUDIO_LATEST=$(wget --no-check-certificate -qO- https://s3.amazonaws.com/rstudio-server/current.ver) \
+    && [ -z "$RSTUDIO_VERSION" ] && RSTUDIO_VERSION=$RSTUDIO_LATEST || true \
+    && echo $RSTUDIO_VERSION \
+    && wget -q http://download2.rstudio.org/rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
+    && dpkg -i rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
+    && rm rstudio-server-*-amd64.deb
+
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+USER neuro
 
 RUN pip install git+https://github.com/jupyterhub/nbserverproxy.git
 RUN jupyter serverextension enable --sys-prefix --py nbserverproxy
@@ -209,10 +223,6 @@ RUN jupyter nbextension enable     --sys-prefix --py nbrsessionproxy
 ENV PATH="${PATH}:/usr/lib/rstudio-server/bin"
 ENV LD_LIBRARY_PATH="/usr/lib/R/lib:/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:/opt/conda/lib/R/lib"
 
-
-# Enable the widgets nbextension:
-
-RUN jupyter nbextension enable --py widgetsnbextension --sys-prefix
-
+RUN bash -c "source activate neuro && python -c 'from nilearn import datasets; haxby_dataset = datasets.fetch_haxby()' "
 
 WORKDIR /home/neuro
