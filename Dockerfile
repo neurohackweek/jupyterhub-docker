@@ -5,7 +5,7 @@
 # pull request on our GitHub repository:
 #     https://github.com/kaczmarj/neurodocker
 #
-# Timestamp: 2017-08-28 13:45:40
+# Timestamp: 2017-08-28 21:42:13
 
 FROM neurodebian:stretch-non-free
 
@@ -162,7 +162,7 @@ RUN echo "Downloading Miniconda installer ..." \
 # Create conda environment
 #-------------------------
 RUN conda create -y -q --name neuro python=3.6 \
-    	jupyter jupyterlab traits pandas matplotlib scikit-learn seaborn swig reprozip reprounzip altair traitsui apptools configobj vtk jupyter_contrib_nbextensions bokeh scikit-image codecov nitime cython joblib \
+    	jupyter jupyterlab traits pandas matplotlib scikit-learn seaborn swig reprozip reprounzip altair traitsui apptools configobj vtk jupyter_contrib_nbextensions bokeh scikit-image codecov nitime cython joblib jupyterhub=0.7.2 \
     && sync && conda clean -tipsy && sync \
     && /bin/bash -c "source activate neuro \
     	&& pip install -q --no-cache-dir \
