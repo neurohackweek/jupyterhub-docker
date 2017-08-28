@@ -34,9 +34,8 @@ docker run --rm kaczmarj/neurodocker generate -b neurodebian:stretch-non-free -p
             add_to_path=False \
 --instruction "RUN bash -c \"source activate afni27 && python -m ipykernel install --user --name afni27 --display-name Py2-afni \" " \
 --instruction "RUN bash -c \"source activate neuro && python -c 'from nilearn import datasets; haxby_dataset = datasets.fetch_haxby()' \" " \
---instruction "ENV PATH=\"${PATH}:/usr/lib/rstudio-server/bin\" "\
---instruction "ENV LD_LIBRARY_PATH=\"/usr/lib/R/lib:/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:/opt/conda/lib/R/lib\" "\
-"
+--instruction "ENV PATH=\"${PATH}:/usr/lib/rstudio-server/bin\" " \
+--instruction "ENV LD_LIBRARY_PATH=\"/usr/lib/R/lib:/lib:/usr/lib/x86_64-linux-gnu:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64/server:/opt/conda/lib/R/lib\" " \
 --workdir /home/neuro \
 --no-check-urls > Dockerfile
 ```
