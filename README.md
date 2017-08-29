@@ -18,6 +18,8 @@ docker run --rm kaczmarj/neurodocker generate -b neurodebian:stretch-non-free -p
 --install psmisc libapparmor1 sudo \
 --instruction "RUN bash -c \"curl http://download2.rstudio.org/rstudio-server-\$(curl https://s3.amazonaws.com/rstudio-server/current.ver)-amd64.deb >> rstudio-server-amd64.deb && dpkg -i rstudio-server-amd64.deb && rm rstudio-server-amd64.deb\" " \
 --instruction "RUN curl -sSL https://dl.dropbox.com/s/lfuppfhuhi1li9t/cifti-data.tgz?dl=0 | tar zx -C / " \
+--instruction "RUN ln -s /lib/x86_64-linux-gnu/libssl.so.1.1 /lib/x86_64-linux-gnu/libssl.so.1.0.0 " \
+--instruction "RUN ln -s /lib/x86_64-linux-gnu/libcrypto.so.1.1 /lib/x86_64-linux-gnu/libcrypto.so.1.0.0 " \
 --user=neuro \
 --miniconda python_version=3.6 \
             conda_install="jupyter jupyterlab traits pandas matplotlib scikit-learn seaborn swig reprozip reprounzip altair traitsui apptools configobj vtk jupyter_contrib_nbextensions bokeh scikit-image codecov nitime cython joblib jupyterhub=0.7.2" \

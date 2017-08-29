@@ -5,7 +5,7 @@
 # pull request on our GitHub repository:
 #     https://github.com/kaczmarj/neurodocker
 #
-# Timestamp: 2017-08-28 21:42:13
+# Timestamp: 2017-08-29 19:35:01
 
 FROM neurodebian:stretch-non-free
 
@@ -137,6 +137,12 @@ RUN bash -c "curl http://download2.rstudio.org/rstudio-server-$(curl https://s3.
 
 # User-defined instruction
 RUN curl -sSL https://dl.dropbox.com/s/lfuppfhuhi1li9t/cifti-data.tgz?dl=0 | tar zx -C /
+
+# User-defined instruction
+RUN ln -s /lib/x86_64-linux-gnu/libssl.so.1.1 /lib/x86_64-linux-gnu/libssl.so.1.0.0
+
+# User-defined instruction
+RUN ln -s /lib/x86_64-linux-gnu/libcrypto.so.1.1 /lib/x86_64-linux-gnu/libcrypto.so.1.0.0
 
 # Create new user: neuro
 RUN useradd --no-user-group --create-home --shell /bin/bash neuro
