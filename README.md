@@ -38,7 +38,7 @@ docker run --rm kaczmarj/neurodocker generate -b neurodebian:stretch-non-free -p
 --instruction "RUN bash -c \"source activate afni27 && python -m ipykernel install --sys-prefix --name afni27 --display-name Py2-afni \" " \
 --instruction "RUN bash -c \"source activate neuro && python -c 'from nilearn import datasets; haxby_dataset = datasets.fetch_haxby()' \" " \
 --user=root \
---instruction "RUN mkdir /data && chown neuro /data && chmod 777 /data && mkdir /output && chown neuro /output && chmod 777 /output && mkdir /repos && chown neuro /repos && chmod 777 /repos" \
+--instruction "RUN mkdir /data && chown neuro /data && chmod 777 /data && mkdir /output && chown neuro /output && chmod 777 /output" \
 --user=neuro \
 --instruction "RUN bash -c \"source activate neuro && cd /data && datalad install -r ///workshops/nih-2017/ds000114 && datalad get -r -J4 ds000114/sub-0[12] && datalad get -r ds000114/derivatives/f*/sub-0[12] && datalad get -r ds000114/derivatives/f*/fsaverage5 \" " \
 --instruction "RUN curl -sSL https://osf.io/dhzv7/download?version=3 | tar zx -C /data/ds000114/derivatives/fmriprep" \
