@@ -5,7 +5,7 @@
 # pull request on our GitHub repository:
 #     https://github.com/kaczmarj/neurodocker
 #
-# Timestamp: 2017-08-31 14:43:57
+# Timestamp: 2017-08-31 19:05:33
 
 FROM neurodebian:stretch-non-free
 
@@ -30,9 +30,6 @@ RUN apt-get update -qq && apt-get install -yq --no-install-recommends  \
        fi \
     && chmod -R 777 /neurodocker && chmod a+s /neurodocker
 ENTRYPOINT ["/neurodocker/startup.sh"]
-
-# User-defined instruction
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
 
 RUN apt-get update -qq \
     && apt-get install -y -q --no-install-recommends dcm2niix \
@@ -149,15 +146,6 @@ RUN echo "Downloading standalone SPM ..." \
 ENV MATLABCMD=/opt/mcr/v92/toolbox/matlab \
     FORCE_SPMMCR=1 \
     LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/opt/mcr/v92/runtime/glnxa64:/opt/mcr/v92/bin/glnxa64:/opt/mcr/v92/sys/os/glnxa64:$LD_LIBRARY_PATH
-
-# User-defined instruction
-RUN bash -c "curl -sSL  http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb > libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb && dpkg -i libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb && rm libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb" 
-
-# User-defined instruction
-RUN bash -c "curl -sSL http://download2.rstudio.org/rstudio-server-$(curl https://s3.amazonaws.com/rstudio-server/current.ver)-amd64.deb >> rstudio-server-amd64.deb && dpkg -i rstudio-server-amd64.deb && rm rstudio-server-amd64.deb" 
-
-# User-defined instruction
-RUN Rscript -e 'install.packages(c("neuRosim", "ggplot2", "fmri", "dplyr", "tidyr", "Lahman", "data.table", "readr"), repos = "http://cran.case.edu")' 
 
 # User-defined instruction
 RUN curl -sSL https://dl.dropbox.com/s/lfuppfhuhi1li9t/cifti-data.tgz?dl=0 | tar zx -C / 
