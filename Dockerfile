@@ -5,9 +5,9 @@
 # pull request on our GitHub repository:
 #     https://github.com/kaczmarj/neurodocker
 #
-# Timestamp: 2017-08-31 14:21:07
+# Timestamp: 2017-08-31 14:41:19
 
-FROM neurodebian:zesty-non-free
+FROM neurodebian:stretch-non-free
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -48,12 +48,52 @@ RUN apt-get update -qq \
                                                      ncdu \
                                                      tig \
                                                      git-annex-remote-rclone \
-                                                     xvfb \
-                                                     mesa-utils \
                                                      build-essential \
                                                      nodejs \
+                                                     r-recommended \
+                                                     psmisc \
+                                                     libapparmor1 \
+                                                     sudo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# User-defined instruction
+RUN apt-get update && apt-get install -yq xvfb mesa-utils libgl1-mesa-dri && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
+
+#--------------------
+# Install AFNI latest
+#--------------------
+ENV PATH=/opt/afni:$PATH
+RUN apt-get update -qq && apt-get install -yq --no-install-recommends ed gsl-bin libglu1-mesa-dev libglib2.0-0 libglw1-mesa \
+    libgomp1 libjpeg62 libxm4 netpbm tcsh xfonts-base xvfb \
+    && libs_path=/usr/lib/x86_64-linux-gnu \
+    && if [ -f $libs_path/libgsl.so.19 ]; then \
+           ln $libs_path/libgsl.so.19 $libs_path/libgsl.so.0; \
+       fi \
+    # Install libxp (not in all ubuntu/debian repositories) \
+    && apt-get install -yq --no-install-recommends libxp6 \
+    || /bin/bash -c " \
+       curl --retry 5 -o /tmp/libxp6.deb -sSL http://mirrors.kernel.org/debian/pool/main/libx/libxp/libxp6_1.0.2-2_amd64.deb \
+       && dpkg -i /tmp/libxp6.deb && rm -f /tmp/libxp6.deb" \
+    # Install libpng12 (not in all ubuntu/debian repositories) \
+    && apt-get install -yq --no-install-recommends libpng12-0 \
+    || /bin/bash -c " \
+       curl -o /tmp/libpng12.deb -sSL http://mirrors.kernel.org/debian/pool/main/libp/libpng/libpng12-0_1.2.49-1%2Bdeb7u2_amd64.deb \
+       && dpkg -i /tmp/libpng12.deb && rm -f /tmp/libpng12.deb" \
+    # Install R \
+    && apt-get install -yq --no-install-recommends \
+    	r-base-dev r-cran-rmpi \
+     || /bin/bash -c " \
+        curl -o /tmp/install_R.sh -sSL https://gist.githubusercontent.com/kaczmarj/8e3792ae1af70b03788163c44f453b43/raw/0577c62e4771236adf0191c826a25249eb69a130/R_installer_debian_ubuntu.sh \
+        && /bin/bash /tmp/install_R.sh" \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && echo "Downloading AFNI ..." \
+    && mkdir -p /opt/afni \
+    && curl -sSL --retry 5 https://afni.nimh.nih.gov/pub/dist/tgz/linux_openmp_64.tgz \
+    | tar zx -C /opt/afni --strip-components=1 \
+    && /opt/afni/rPkgsInstall -pkgs ALL \
+    && rm -rf /tmp/*
 
 #-----------------------------------------------------------
 # Install FSL v5.0.10
@@ -110,55 +150,17 @@ ENV MATLABCMD=/opt/mcr/v92/toolbox/matlab \
     FORCE_SPMMCR=1 \
     LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/opt/mcr/v92/runtime/glnxa64:/opt/mcr/v92/bin/glnxa64:/opt/mcr/v92/sys/os/glnxa64:$LD_LIBRARY_PATH
 
-RUN apt-get update -qq \
-    && apt-get install -y -q --no-install-recommends psmisc \
-                                                     libapparmor1 \
-                                                     sudo \
-                                                     r-recommended \
-                                                     libssl1.0.0 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+# User-defined instruction
+RUN bash -c "curl -sSL  http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb > libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb && dpkg -i libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb && rm libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb" 
 
 # User-defined instruction
-RUN bash -c "curl http://download2.rstudio.org/rstudio-server-$(curl https://s3.amazonaws.com/rstudio-server/current.ver)-amd64.deb >> rstudio-server-amd64.deb && dpkg -i rstudio-server-amd64.deb && rm rstudio-server-amd64.deb" 
+RUN bash -c "curl -sSL http://download2.rstudio.org/rstudio-server-$(curl https://s3.amazonaws.com/rstudio-server/current.ver)-amd64.deb >> rstudio-server-amd64.deb && dpkg -i rstudio-server-amd64.deb && rm rstudio-server-amd64.deb" 
+
+# User-defined instruction
+RUN Rscript -e 'install.packages(c("neuRosim", "ggplot2", "fmri", "dplyr", "tidyr", "Lahman", "data.table", "readr"), repos = "http://cran.case.edu")' 
 
 # User-defined instruction
 RUN curl -sSL https://dl.dropbox.com/s/lfuppfhuhi1li9t/cifti-data.tgz?dl=0 | tar zx -C / 
-
-#--------------------
-# Install AFNI latest
-#--------------------
-ENV PATH=/opt/afni:$PATH
-RUN apt-get update -qq && apt-get install -yq --no-install-recommends ed gsl-bin libglu1-mesa-dev libglib2.0-0 libglw1-mesa \
-    libgomp1 libjpeg62 libxm4 netpbm tcsh xfonts-base xvfb \
-    && libs_path=/usr/lib/x86_64-linux-gnu \
-    && if [ -f $libs_path/libgsl.so.19 ]; then \
-           ln $libs_path/libgsl.so.19 $libs_path/libgsl.so.0; \
-       fi \
-    # Install libxp (not in all ubuntu/debian repositories) \
-    && apt-get install -yq --no-install-recommends libxp6 \
-    || /bin/bash -c " \
-       curl --retry 5 -o /tmp/libxp6.deb -sSL http://mirrors.kernel.org/debian/pool/main/libx/libxp/libxp6_1.0.2-2_amd64.deb \
-       && dpkg -i /tmp/libxp6.deb && rm -f /tmp/libxp6.deb" \
-    # Install libpng12 (not in all ubuntu/debian repositories) \
-    && apt-get install -yq --no-install-recommends libpng12-0 \
-    || /bin/bash -c " \
-       curl -o /tmp/libpng12.deb -sSL http://mirrors.kernel.org/debian/pool/main/libp/libpng/libpng12-0_1.2.49-1%2Bdeb7u2_amd64.deb \
-       && dpkg -i /tmp/libpng12.deb && rm -f /tmp/libpng12.deb" \
-    # Install R \
-    && apt-get install -yq --no-install-recommends \
-    	r-base-dev r-cran-rmpi \
-     || /bin/bash -c " \
-        curl -o /tmp/install_R.sh -sSL https://gist.githubusercontent.com/kaczmarj/8e3792ae1af70b03788163c44f453b43/raw/0577c62e4771236adf0191c826a25249eb69a130/R_installer_debian_ubuntu.sh \
-        && /bin/bash /tmp/install_R.sh" \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && echo "Downloading AFNI ..." \
-    && mkdir -p /opt/afni \
-    && curl -sSL --retry 5 https://afni.nimh.nih.gov/pub/dist/tgz/linux_openmp_64.tgz \
-    | tar zx -C /opt/afni --strip-components=1 \
-    && /opt/afni/rPkgsInstall -pkgs ALL \
-    && rm -rf /tmp/*
 
 # Create new user: neuro
 RUN useradd --no-user-group --create-home --shell /bin/bash neuro
@@ -188,7 +190,7 @@ RUN conda create -y -q --name neuro python=3.6 \
     && sync && conda clean -tipsy && sync \
     && /bin/bash -c "source activate neuro \
     	&& pip install -q --no-cache-dir \
-    	https://github.com/nipy/nibabel/archive/master.zip https://github.com/nipy/nipype/tarball/master nilearn https://github.com/INCF/pybids/archive/master.zip datalad dipy nipy duecredit pymvpa2 mayavi git+https://github.com/jupyterhub/nbrsessionproxy.git https://github.com/poldracklab/mriqc/tarball/master https://github.com/poldracklab/fmriprep/tarball/master pprocess " \
+    	https://github.com/nipy/nibabel/archive/master.zip https://github.com/nipy/nipype/tarball/master nilearn https://github.com/INCF/pybids/archive/master.zip datalad dipy nipy duecredit pymvpa2 mayavi git+https://github.com/jupyterhub/nbserverproxy.git git+https://github.com/jupyterhub/nbrsessionproxy.git https://github.com/satra/mapalign/archive/master.zip https://github.com/poldracklab/mriqc/tarball/master https://github.com/poldracklab/fmriprep/tarball/master pprocess " \
     && sync
 ENV PATH=/opt/conda/envs/neuro/bin:$PATH
 
@@ -205,7 +207,7 @@ RUN bash -c "source activate neuro && pip install  --upgrade https://github.com/
 RUN bash -c "source activate neuro && jupyter nbextension enable rubberband/main && jupyter nbextension enable exercise2/main && jupyter nbextension enable spellchecker/main " 
 
 # User-defined instruction
-RUN bash -c "source activate neuro && jupyter serverextension enable --sys-prefix --py nbrsessionproxy && jupyter nbextension install --sys-prefix --py nbrsessionproxy && jupyter nbextension enable --sys-prefix --py nbrsessionproxy " 
+RUN bash -c "source activate neuro && jupyter serverextension enable --sys-prefix --py nbserverproxy && jupyter serverextension enable --sys-prefix --py nbrsessionproxy && jupyter nbextension install --sys-prefix --py nbrsessionproxy && jupyter nbextension enable --sys-prefix --py nbrsessionproxy " 
 
 # User-defined instruction
 RUN bash -c " source activate neuro && pip install git+https://github.com/data-8/gitautosync && jupyter serverextension enable --py nbgitautosync --sys-prefix " 
@@ -218,7 +220,7 @@ RUN conda create -y -q --name afni27 python=2.7 \
     && sync && conda clean -tipsy && sync
 
 # User-defined instruction
-RUN bash -c " source activate afni27 && python -m ipykernel install --sys-prefix --name afni27 --display-name Py2-afni " 
+RUN bash -c "source activate afni27 && python -m ipykernel install --sys-prefix --name afni27 --display-name Py2-afni " 
 
 # User-defined instruction
 RUN bash -c "source activate neuro && python -c 'from nilearn import datasets; haxby_dataset = datasets.fetch_haxby()' " 
@@ -226,12 +228,15 @@ RUN bash -c "source activate neuro && python -c 'from nilearn import datasets; h
 USER root
 
 # User-defined instruction
-RUN mkdir /data && chown neuro /data
+RUN mkdir /data && chown neuro /data && chmod 777 /data && mkdir /output && chown neuro /output && chmod 777 /output && mkdir /repos && chown neuro /repos && chmod 777 /repos
 
 USER neuro
 
 # User-defined instruction
 RUN bash -c "source activate neuro && cd /data && datalad install -r ///workshops/nih-2017/ds000114 && datalad get -r -J4 ds000114/sub-0[12] && datalad get -r ds000114/derivatives/f*/sub-0[12] && datalad get -r ds000114/derivatives/f*/fsaverage5 " 
+
+# User-defined instruction
+RUN curl -sSL https://osf.io/dhzv7/download?version=3 | tar zx -C /data/ds000114/derivatives/fmriprep
 
 WORKDIR /home/neuro
 
