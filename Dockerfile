@@ -5,7 +5,7 @@
 # pull request on our GitHub repository:
 #     https://github.com/kaczmarj/neurodocker
 #
-# Timestamp: 2017-08-31 19:05:33
+# Timestamp: 2017-08-31 22:01:58
 
 FROM neurodebian:stretch-non-free
 
@@ -227,10 +227,4 @@ RUN bash -c "source activate neuro && cd /data && datalad install -r ///workshop
 RUN curl -sSL https://osf.io/dhzv7/download?version=3 | tar zx -C /data/ds000114/derivatives/fmriprep
 
 WORKDIR /home/neuro
-
-# User-defined instruction
-ENV PATH="${PATH}:/usr/lib/rstudio-server/bin" 
-
-# User-defined instruction
-ENV LD_LIBRARY_PATH="/usr/lib/R/lib:${LD_LIBRARY_PATH}" 
 

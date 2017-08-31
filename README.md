@@ -39,7 +39,5 @@ docker run --rm kaczmarj/neurodocker generate -b neurodebian:stretch-non-free -p
 --instruction "RUN bash -c \"source activate neuro && cd /data && datalad install -r ///workshops/nih-2017/ds000114 && datalad get -r -J4 ds000114/sub-0[12] && datalad get -r ds000114/derivatives/f*/sub-0[12] && datalad get -r ds000114/derivatives/f*/fsaverage5 \" " \
 --instruction "RUN curl -sSL https://osf.io/dhzv7/download?version=3 | tar zx -C /data/ds000114/derivatives/fmriprep" \
 --workdir /home/neuro \
---instruction "ENV PATH=\"\${PATH}:/usr/lib/rstudio-server/bin\" " \
---instruction "ENV LD_LIBRARY_PATH=\"/usr/lib/R/lib:\${LD_LIBRARY_PATH}\" " \
 --no-check-urls > Dockerfile
 ```
