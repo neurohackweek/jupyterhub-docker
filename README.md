@@ -33,7 +33,7 @@ docker run --rm kaczmarj/neurodocker generate -b neurodebian:zesty-non-free -p a
             env_name="afni27" \
             conda_install="ipykernel" \
             add_to_path=False \
---instruction "RUN bash -c \"source activate afni27 && python -m ipykernel install --sysprefix --name afni27 --display-name Py2-afni \" " \
+--instruction "RUN bash -c \"source activate afni27 && python -m ipykernel install --sys-prefix --name afni27 --display-name Py2-afni \" " \
 --instruction "RUN bash -c \"source activate neuro && python -c 'from nilearn import datasets; haxby_dataset = datasets.fetch_haxby()' \" " \
 --user=root \
 --instruction "RUN mkdir /data && chown neuro /data" \
