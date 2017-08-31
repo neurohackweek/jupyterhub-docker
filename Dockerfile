@@ -5,7 +5,7 @@
 # pull request on our GitHub repository:
 #     https://github.com/kaczmarj/neurodocker
 #
-# Timestamp: 2017-08-31 14:41:41
+# Timestamp: 2017-08-31 14:43:57
 
 FROM neurodebian:stretch-non-free
 
@@ -228,7 +228,7 @@ RUN bash -c "source activate neuro && python -c 'from nilearn import datasets; h
 USER root
 
 # User-defined instruction
-RUN mkdir /data && chown neuro /data && chmod 777 /data && mkdir /output && chown neuro /output && chmod 777 /output && mkdir /repos && chown neuro /repos && chmod 777 /repos
+RUN mkdir /data && chown neuro /data && chmod 777 /data && mkdir /output && chown neuro /output && chmod 777 /output
 
 USER neuro
 
