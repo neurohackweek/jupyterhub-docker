@@ -9,16 +9,12 @@ Constructed using:
 
 ```
 docker run --rm kaczmarj/neurodocker generate -b neurodebian:stretch-non-free -p apt \
---instruction "RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -" \
 --install dcm2niix convert3d ants graphviz tree git-annex-standalone vim emacs-nox nano less ncdu tig git-annex-remote-rclone build-essential nodejs r-recommended psmisc libapparmor1 sudo \
 --instruction "RUN apt-get update && apt-get install -yq xvfb mesa-utils libgl1-mesa-dri && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* " \
 --afni version=latest \
 --fsl version=5.0.10 \
 --freesurfer version=6.0.0 min=true \
 --spm version=12 matlab_version=R2017a \
---instruction "RUN bash -c \"curl -sSL  http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb > libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb && dpkg -i libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb && rm libssl1.0.0_1.0.2g-1ubuntu11.2_amd64.deb\" " \
---instruction "RUN bash -c \"curl -sSL http://download2.rstudio.org/rstudio-server-\$(curl https://s3.amazonaws.com/rstudio-server/current.ver)-amd64.deb >> rstudio-server-amd64.deb && dpkg -i rstudio-server-amd64.deb && rm rstudio-server-amd64.deb\" " \
---instruction "RUN Rscript -e 'install.packages(c(\"neuRosim\", \"ggplot2\", \"fmri\", \"dplyr\", \"tidyr\", \"Lahman\", \"data.table\", \"readr\"), repos = \"http://cran.case.edu\")' " \
 --instruction "RUN curl -sSL https://dl.dropbox.com/s/lfuppfhuhi1li9t/cifti-data.tgz?dl=0 | tar zx -C / " \
 --user=neuro \
 --miniconda python_version=3.6 \
