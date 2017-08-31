@@ -5,7 +5,7 @@
 # pull request on our GitHub repository:
 #     https://github.com/kaczmarj/neurodocker
 #
-# Timestamp: 2017-08-31 06:00:23
+# Timestamp: 2017-08-31 14:21:07
 
 FROM neurodebian:zesty-non-free
 
@@ -218,7 +218,7 @@ RUN conda create -y -q --name afni27 python=2.7 \
     && sync && conda clean -tipsy && sync
 
 # User-defined instruction
-RUN bash -c "source activate afni27 && python -m ipykernel install --sys-prefix --name afni27 --display-name Py2-afni " 
+RUN bash -c " source activate afni27 && python -m ipykernel install --sys-prefix --name afni27 --display-name Py2-afni " 
 
 # User-defined instruction
 RUN bash -c "source activate neuro && python -c 'from nilearn import datasets; haxby_dataset = datasets.fetch_haxby()' " 
