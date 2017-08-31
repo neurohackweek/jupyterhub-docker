@@ -5,7 +5,7 @@
 # pull request on our GitHub repository:
 #     https://github.com/kaczmarj/neurodocker
 #
-# Timestamp: 2017-08-31 14:41:19
+# Timestamp: 2017-08-31 14:41:41
 
 FROM neurodebian:stretch-non-free
 
