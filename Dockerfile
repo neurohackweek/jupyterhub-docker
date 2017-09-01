@@ -5,7 +5,7 @@
 # pull request on our GitHub repository:
 #     https://github.com/kaczmarj/neurodocker
 #
-# Timestamp: 2017-09-01 02:25:25
+# Timestamp: 2017-09-01 14:32:53
 
 FROM neurodebian:stretch-non-free
 
@@ -189,33 +189,33 @@ RUN echo "Downloading Miniconda installer ..." \
 #-------------------------
 # Create conda environment
 #-------------------------
-RUN conda create -y -q --name neuro \
+RUN conda create -y -q --name neuro3 \
     	python=3.6 jupyter jupyterlab traits pandas matplotlib scikit-learn seaborn swig reprozip reprounzip altair traitsui apptools configobj vtk jupyter_contrib_nbextensions bokeh scikit-image codecov nitime cython joblib jupyterhub=0.7.2 \
     && sync && conda clean -tipsy && sync \
-    && /bin/bash -c "source activate neuro \
+    && /bin/bash -c "source activate neuro3 \
     	&& pip install -q --no-cache-dir \
     	https://github.com/nipy/nibabel/archive/master.zip https://github.com/nipy/nipype/tarball/master nilearn https://github.com/INCF/pybids/archive/master.zip datalad dipy nipy duecredit pymvpa2 mayavi git+https://github.com/jupyterhub/nbserverproxy.git git+https://github.com/jupyterhub/nbrsessionproxy.git  \
     https://github.com/satra/mapalign/archive/master.zip https://github.com/poldracklab/mriqc/tarball/master https://github.com/poldracklab/fmriprep/tarball/master pprocess " \
     && sync
-ENV PATH=/opt/conda/envs/neuro/bin:$PATH
+ENV PATH=/opt/conda/envs/neuro3/bin:$PATH
 
 # User-defined instruction
-RUN bash -c "source activate neuro && python -m ipykernel install --sys-prefix --name neuro --display-name Py3-neuro " 
+RUN bash -c "source activate neuro3 && python -m ipykernel install --sys-prefix --name neuro3 --display-name Py3-neuro " 
 
 # User-defined instruction
-RUN bash -c "source activate neuro && pip install --pre --upgrade ipywidgets pythreejs " 
+RUN bash -c "source activate neuro3 && pip install --pre --upgrade ipywidgets pythreejs " 
 
 # User-defined instruction
-RUN bash -c "source activate neuro && pip install  --upgrade https://github.com/maartenbreddels/ipyvolume/archive/master.zip && jupyter nbextension install --py --sys-prefix ipyvolume && jupyter nbextension enable --py --sys-prefix ipyvolume " 
+RUN bash -c "source activate neuro3 && pip install  --upgrade https://github.com/maartenbreddels/ipyvolume/archive/master.zip && jupyter nbextension install --py --sys-prefix ipyvolume && jupyter nbextension enable --py --sys-prefix ipyvolume " 
 
 # User-defined instruction
-RUN bash -c "source activate neuro && jupyter nbextension enable rubberband/main && jupyter nbextension enable exercise2/main && jupyter nbextension enable spellchecker/main " 
+RUN bash -c "source activate neuro3 && jupyter nbextension enable rubberband/main && jupyter nbextension enable exercise2/main && jupyter nbextension enable spellchecker/main " 
 
 # User-defined instruction
-RUN bash -c "source activate neuro && jupyter serverextension enable --sys-prefix --py nbserverproxy && jupyter serverextension enable --sys-prefix --py nbrsessionproxy && jupyter nbextension install --sys-prefix --py nbrsessionproxy && jupyter nbextension enable --sys-prefix --py nbrsessionproxy " 
+RUN bash -c "source activate neuro3 && jupyter serverextension enable --sys-prefix --py nbserverproxy && jupyter serverextension enable --sys-prefix --py nbrsessionproxy && jupyter nbextension install --sys-prefix --py nbrsessionproxy && jupyter nbextension enable --sys-prefix --py nbrsessionproxy " 
 
 # User-defined instruction
-RUN bash -c " source activate neuro && pip install git+https://github.com/data-8/gitautosync && jupyter serverextension enable --py nbgitautosync --sys-prefix " 
+RUN bash -c " source activate neuro3 && pip install git+https://github.com/data-8/gitautosync && jupyter serverextension enable --py nbgitautosync --sys-prefix " 
 
 #-------------------------
 # Create conda environment
@@ -225,10 +225,10 @@ RUN conda create -y -q --name afni27 \
     && sync && conda clean -tipsy && sync
 
 # User-defined instruction
-RUN bash -c "source activate afni27 && python -m ipykernel install --sys-prefix --name afni27 --display-name Py2-afni " 
+RUN bash -c "source activate neuro3 && python -m ipykernel install --sys-prefix --name afni27 --display-name Py2-afni " 
 
 # User-defined instruction
-RUN bash -c "source activate neuro && python -c 'from nilearn import datasets; haxby_dataset = datasets.fetch_haxby()' " 
+RUN bash -c "source activate neuro3 && python -c 'from nilearn import datasets; haxby_dataset = datasets.fetch_haxby()' " 
 
 USER root
 
@@ -236,12 +236,12 @@ USER root
 RUN mkdir /data && chown neuro /data && chmod 777 /data && mkdir /output && chown neuro /output && chmod 777 /output && mkdir /repos && chown neuro /repos && chmod 777 /repos
 
 # User-defined instruction
-RUN echo 'neuro:neuro' | chpasswd
+RUN echo 'neuro:neuro' | chpasswd && usermod -aG sudo neuro
 
 USER neuro
 
 # User-defined instruction
-RUN bash -c "source activate neuro && cd /data && datalad install -r ///workshops/nih-2017/ds000114 && datalad get -r -J4 ds000114/sub-0[12] && datalad get -r ds000114/derivatives/f*/sub-0[12] && datalad get -r ds000114/derivatives/f*/fsaverage5 " 
+RUN bash -c "source activate neuro3 && cd /data && datalad install -r ///workshops/nih-2017/ds000114 && datalad get -r -J4 ds000114/sub-0[12]/ses-test/ && datalad get -r ds000114/derivatives/fr*/sub-0[12] && datalad get -r ds000114/derivatives/fm*/sub-0[12]/anat && datalad get -r ds000114/derivatives/fm*/sub-0[12]/ses-test && datalad get -r ds000114/derivatives/f*/fsaverage5 " 
 
 # User-defined instruction
 RUN curl -sSL https://osf.io/dhzv7/download?version=3 | tar zx -C /data/ds000114/derivatives/fmriprep
